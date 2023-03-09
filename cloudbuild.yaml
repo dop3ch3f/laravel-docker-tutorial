@@ -1,5 +1,23 @@
 steps:
   - name : 'gcr.io/cloud-builders/docker'
     args: ["build",  "-t", 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA',"."]
-  images: ['gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA']
-  timeout: "1600s"
+  # build the image with cloud run
+  - name : 'gcr.io/cloud-builders/docker'
+    args: ["build",  "-t", 'gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA',"."]
+  # push the image to gcr
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA"]
+  # Deploy container image to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "$_SERVICE"
+      - "--image"
+      - "gcr.io/$PROJECT_ID/$REPO_NAME:$COMMIT_SHA"
+      - "--region"
+      - "us-central1"
+      - "--platform"
+      - "managed"
+timeout: "1600s"
